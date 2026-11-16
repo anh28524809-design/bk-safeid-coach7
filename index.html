@@ -1,0 +1,1733 @@
+<!DOCTYPE html>
+<html lang="vi" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BK SafeID Coach - Trợ lý An toàn Số & Định danh thông minh</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Vietnamese-optimized Google Fonts: Be Vietnam Pro & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Be Vietnam Pro"', 'Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            900: '#312e81',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        html {
+            font-size: 17.5px; /* Tăng cỡ chữ cơ bản rõ nét, dễ đọc */
+        }
+        body {
+            font-family: 'Be Vietnam Pro', 'Inter', sans-serif;
+            line-height: 1.65;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        .formatted-output p {
+            margin-bottom: 0.65rem;
+        }
+        .formatted-output p:last-child {
+            margin-bottom: 0;
+        }
+        .formatted-output ul {
+            list-style-type: disc;
+            padding-left: 1.35rem;
+            margin-top: 0.4rem;
+            margin-bottom: 0.65rem;
+        }
+        .formatted-output ol {
+            list-style-type: decimal;
+            padding-left: 1.35rem;
+            margin-top: 0.4rem;
+            margin-bottom: 0.65rem;
+        }
+        .formatted-output li {
+            margin-bottom: 0.35rem;
+        }
+        .formatted-output strong {
+            font-weight: 700;
+            color: #1e293b;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 h-full flex flex-col">
+
+    <!-- CUSTOM TOAST / MESSAGE BOX (Không dùng alert) -->
+    <div id="toast-box" class="hidden fixed top-5 right-5 z-[60] max-w-md bg-slate-900 text-white px-5 py-3.5 rounded-2xl shadow-2xl border border-slate-700 text-sm font-medium flex items-center gap-3 transition-all">
+        <span id="toast-icon">⚠️</span>
+        <span id="toast-text" class="leading-snug"></span>
+    </div>
+
+    <!-- LOGIN OVERLAY -->
+    <div id="login-modal" class="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-lg w-full p-7 sm:p-8 border border-slate-100 my-auto">
+            <div class="text-center mb-6">
+                <div class="inline-flex items-center justify-center w-16 h-16 bg-brand-50 text-brand-600 rounded-2xl mb-4 text-3xl font-bold shadow-inner">
+                    🛡️
+                </div>
+                <h1 class="text-2xl font-bold text-slate-900">BK SafeID Coach</h1>
+                <p class="text-sm text-slate-600 mt-1.5 leading-relaxed">Trợ lý AI bảo vệ an toàn số & kiểm chứng Deepfake dành cho học sinh THPT</p>
+            </div>
+            
+            <div class="space-y-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1">Mã định danh ẩn danh</label>
+                        <div class="flex gap-1.5">
+                            <input type="text" id="anon-id-input" value="HS_THPT_2026" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-brand-500 outline-none text-sm bg-slate-50 font-mono font-semibold text-slate-800">
+                            <button type="button" onclick="regenerateAnonId()" title="Tạo mã mới" class="px-3 py-2.5 bg-slate-100 hover:bg-slate-200 rounded-xl text-sm font-medium text-slate-700 transition-colors">↻</button>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1">Điểm A–B–G hiện tại</label>
+                        <div class="px-3.5 py-2.5 rounded-xl border border-indigo-100 bg-indigo-50/70 text-sm font-semibold text-indigo-900 flex items-center justify-between">
+                            <span>A: <strong id="login-score-a">0</strong></span>
+                            <span>B: <strong id="login-score-b">0</strong></span>
+                            <span>G: <strong id="login-score-g">0</strong></span>
+                        </div>
+                    </div>
+                </div>
+                <p class="text-xs text-slate-500">Hệ thống sử dụng mã ẩn danh và thang điểm A–B–G (An toàn – Bảo mật – Giám định) để bảo vệ quyền riêng tư của học sinh.</p>
+
+                <div class="flex items-start gap-3 pt-2 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+                    <input type="checkbox" id="terms-checkbox" class="mt-1 w-5 h-5 text-brand-600 border-slate-300 rounded focus:ring-brand-500 cursor-pointer shrink-0">
+                    <label for="terms-checkbox" class="text-sm text-slate-700 leading-relaxed cursor-pointer">
+                        Tôi đồng ý với <span class="text-brand-600 font-semibold underline" onclick="event.preventDefault(); showTermsModal()">Điều khoản sử dụng</span>, cam kết sử dụng BK SafeID Coach đúng mục đích học tập, an toàn số và không dùng hệ thống vào hành vi vi phạm pháp luật.
+                    </label>
+                </div>
+
+                <button onclick="handleLogin()" id="login-btn" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-3.5 px-5 rounded-xl shadow-lg shadow-brand-500/30 transition-all duration-200 flex items-center justify-center gap-2 text-base">
+                    <span>Bắt đầu sử dụng</span>
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TERMS MODAL -->
+    <div id="terms-modal" class="hidden fixed inset-0 z-[55] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-xl max-w-lg w-full p-6 space-y-4">
+            <h3 class="text-lg font-bold text-slate-900">Điều khoản sử dụng BK SafeID Coach</h3>
+            <div class="text-sm text-slate-700 space-y-2.5 max-h-64 overflow-y-auto pr-2 leading-relaxed">
+                <p><strong>1. Mục đích:</strong> Công cụ hỗ trợ học sinh THPT nhận diện rủi ro lừa đảo trực tuyến, rò rỉ thông tin cá nhân và kiểm chứng Deepfake dựa trên dữ liệu thực tế.</p>
+                <p><strong>2. Bảo mật:</strong> Không lưu trữ vĩnh viễn hình ảnh, video, âm thanh nhạy cảm của người dùng. Dữ liệu phiên tạm thời tự động xóa tối đa sau 24 giờ.</p>
+                <p><strong>3. Tính chính xác:</strong> Kết quả phân tích dựa trên bằng chứng quan sát được từ tệp tải lên. Hệ thống luôn báo rõ "Chưa đủ cơ sở kết luận" khi dữ liệu không đủ điều kiện xác minh.</p>
+            </div>
+            <div class="text-right pt-2">
+                <button onclick="closeTermsModal()" class="bg-brand-600 hover:bg-brand-700 text-white px-5 py-2.5 rounded-xl text-sm font-semibold">Đã hiểu</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN APP LAYOUT -->
+    <div id="main-app" class="hidden flex-1 flex flex-col h-full overflow-hidden">
+        
+        <!-- HEADER -->
+        <header class="bg-white border-b border-slate-200 px-4 sm:px-6 py-3 flex items-center justify-between shrink-0 shadow-xs">
+            <div class="flex items-center gap-3">
+                <div class="w-11 h-11 bg-brand-600 text-white rounded-xl flex items-center justify-center font-bold text-xl shadow-md shadow-brand-500/20 shrink-0">
+                    🛡️
+                </div>
+                <div>
+                    <h2 class="font-bold text-slate-900 text-base sm:text-lg leading-tight">BK SafeID Coach</h2>
+                    <p class="text-xs text-slate-500 hidden sm:block">Trợ lý An toàn Số & Kiểm chứng Đa phương tiện THPT</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-2 sm:gap-3">
+                <!-- A-B-G Score Pill -->
+                <div class="flex items-center gap-2 bg-indigo-50 border border-indigo-100 px-3 py-1.5 rounded-full text-xs font-semibold text-indigo-800" title="Điểm An toàn - Bảo mật - Giám định">
+                    <span>A:<strong id="header-score-a">0</strong></span>
+                    <span class="text-indigo-300">|</span>
+                    <span>B:<strong id="header-score-b">0</strong></span>
+                    <span class="text-indigo-300">|</span>
+                    <span>G:<strong id="header-score-g">0</strong></span>
+                </div>
+                <div class="hidden md:flex items-center gap-2 bg-slate-100 px-3 py-1.5 rounded-full text-xs font-mono font-medium text-slate-700">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                    <span id="user-display-id">HS_THPT_2026</span>
+                </div>
+                <button onclick="handleLogout()" class="text-xs text-slate-600 hover:text-red-600 font-semibold px-3 py-2 rounded-xl border border-slate-200 hover:border-red-200 transition-colors">
+                    Thoát
+                </button>
+            </div>
+        </header>
+
+        <!-- NAVIGATION TABS -->
+        <nav class="bg-white border-b border-slate-200 px-4 sm:px-6 flex gap-1 sm:gap-2 overflow-x-auto shrink-0">
+            <button onclick="switchTab(1)" id="tab-btn-1" class="tab-btn py-3.5 px-3.5 text-sm font-bold border-b-2 border-brand-600 text-brand-600 whitespace-nowrap transition-colors flex items-center gap-1.5">
+                💬 1. Trò chuyện an toàn số
+            </button>
+            <button onclick="switchTab(2)" id="tab-btn-2" class="tab-btn py-3.5 px-3.5 text-sm font-medium border-b-2 border-transparent text-slate-600 hover:text-slate-900 whitespace-nowrap transition-colors flex items-center gap-1.5">
+                🖼️ 2. Phân tích Hình ảnh
+            </button>
+            <button onclick="switchTab(3)" id="tab-btn-3" class="tab-btn py-3.5 px-3.5 text-sm font-medium border-b-2 border-transparent text-slate-600 hover:text-slate-900 whitespace-nowrap transition-colors flex items-center gap-1.5">
+                🎥 3. Phân tích Video
+            </button>
+            <button onclick="switchTab(4)" id="tab-btn-4" class="tab-btn py-3.5 px-3.5 text-sm font-medium border-b-2 border-transparent text-slate-600 hover:text-slate-900 whitespace-nowrap transition-colors flex items-center gap-1.5">
+                🎙️ 4. Phân tích Âm thanh
+            </button>
+            <button onclick="switchTab(5)" id="tab-btn-5" class="tab-btn py-3.5 px-3.5 text-sm font-medium border-b-2 border-transparent text-slate-600 hover:text-slate-900 whitespace-nowrap transition-colors flex items-center gap-1.5">
+                📊 5. Luyện tập tình huống
+            </button>
+            <button onclick="switchTab(6)" id="tab-btn-6" class="tab-btn py-3.5 px-3.5 text-sm font-medium border-b-2 border-transparent text-slate-600 hover:text-slate-900 whitespace-nowrap transition-colors flex items-center gap-1.5">
+                📚 6. Cẩm nang & Hướng dẫn
+            </button>
+        </nav>
+
+        <!-- CONTENT SECTIONS -->
+        <main class="flex-1 overflow-y-auto bg-slate-50 relative">
+            
+            <!-- SECTION 1: CHATBOT -->
+            <div id="section-1" class="section-content max-w-4xl mx-auto p-3 sm:p-6 h-full flex flex-col">
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 flex-1 flex flex-col overflow-hidden">
+                    <!-- Chat Header Bar -->
+                    <div class="px-5 py-3.5 border-b border-slate-100 flex flex-wrap items-center justify-between gap-2 bg-slate-50/70">
+                        <div>
+                            <h3 class="font-bold text-slate-900 text-base">Tư vấn An toàn số trực tiếp</h3>
+                            <p class="text-xs text-slate-500">Hỏi đáp trọng tâm về bảo vệ tài khoản, lộ CCCD, mã OTP, mất nick và lừa đảo mạng</p>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <label class="flex items-center gap-2 text-xs font-medium text-slate-700 cursor-pointer bg-white px-3 py-1.5 rounded-lg border border-slate-200">
+                                <input type="checkbox" id="save-history-toggle" class="w-4 h-4 text-brand-600 rounded border-slate-300" onchange="toggleHistorySetting()">
+                                <span>Lưu lịch sử (tối đa 24h)</span>
+                            </label>
+                            <button onclick="clearChatHistory()" class="text-xs font-medium text-slate-500 hover:text-red-600 px-2.5 py-1.5 rounded-lg hover:bg-red-50 transition-colors">Làm mới</button>
+                        </div>
+                    </div>
+
+                    <!-- Chat Messages Box -->
+                    <div id="chat-messages" class="flex-1 p-5 overflow-y-auto space-y-4">
+                        <div class="flex gap-3 max-w-3xl">
+                            <div class="w-9 h-9 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center shrink-0 font-bold text-sm">AI</div>
+                            <div class="bg-slate-100 rounded-2xl px-4 py-3.5 text-slate-800 text-base leading-relaxed shadow-2xs formatted-output">
+                                <p>Chào bạn! Mình là <strong>BK SafeID Coach</strong>. Hãy nêu rõ tình huống bạn đang gặp phải (ví dụ: bị lộ số CCCD, lỡ gửi mã OTP, nghi ngờ link lạ hoặc cuộc gọi giả danh) để mình hướng dẫn các bước xử lý ngay.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Suggestions -->
+                    <div class="px-5 py-2.5 bg-slate-50 border-t border-slate-100 flex gap-2 overflow-x-auto">
+                        <button onclick="sendQuickPrompt('Mình lỡ gửi ảnh CCCD cho người lạ trên mạng thì phải làm gì ngay?')" class="text-xs font-medium bg-white border border-slate-200 text-slate-700 hover:bg-indigo-50 hover:border-indigo-200 px-3.5 py-1.5 rounded-full whitespace-nowrap transition-colors">Lỡ gửi ảnh CCCD cho người lạ</button>
+                        <button onclick="sendQuickPrompt('Mình vừa bấm vào link lạ và nhập mã OTP ngân hàng, xử lý sao bây giờ?')" class="text-xs font-medium bg-white border border-slate-200 text-slate-700 hover:bg-indigo-50 hover:border-indigo-200 px-3.5 py-1.5 rounded-full whitespace-nowrap transition-colors">Lỡ nhập mã OTP vào link lạ</button>
+                        <button onclick="sendQuickPrompt('Tài khoản Facebook của mình bị đổi mật khẩu và email khôi phục, làm sao lấy lại?')" class="text-xs font-medium bg-white border border-slate-200 text-slate-700 hover:bg-indigo-50 hover:border-indigo-200 px-3.5 py-1.5 rounded-full whitespace-nowrap transition-colors">Mất tài khoản Facebook</button>
+                    </div>
+
+                    <!-- Chat Input -->
+                    <div class="p-4 border-t border-slate-200 bg-white flex gap-3">
+                        <input type="text" id="chat-input" placeholder="Nhập câu hỏi cụ thể của bạn về an toàn số..." class="flex-1 px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none text-base" onkeypress="handleChatKeyPress(event)">
+                        <button onclick="sendChatMessage()" id="send-chat-btn" class="bg-brand-600 hover:bg-brand-700 text-white px-6 py-3 rounded-xl font-semibold text-base transition-colors shadow-md shadow-brand-500/20 flex items-center justify-center shrink-0">
+                            Gửi
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 2: IMAGE ANALYSIS -->
+            <div id="section-2" class="section-content hidden max-w-4xl mx-auto p-4 sm:p-6 space-y-6">
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-4">
+                    <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-4">
+                        <div>
+                            <h3 class="text-lg font-bold text-slate-900">Phân tích Hình ảnh & Nhận diện Dấu hiệu Giả mạo</h3>
+                            <p class="text-sm text-slate-600 mt-0.5">Hệ thống đọc trực tiếp dữ liệu điểm ảnh thực tế để mô tả đúng nội dung và kiểm tra bất thường.</p>
+                        </div>
+                        <span class="text-xs bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-full font-semibold">Giám định dữ liệu thực</span>
+                    </div>
+
+                    <div class="border-2 border-dashed border-slate-300 rounded-2xl p-7 text-center hover:bg-slate-50 transition-colors cursor-pointer" onclick="document.getElementById('image-file-input').click()">
+                        <input type="file" id="image-file-input" accept="image/png, image/jpeg, image/webp" class="hidden" onchange="handleImageUpload(event)">
+                        <div class="max-w-md mx-auto space-y-2">
+                            <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl mx-auto flex items-center justify-center text-2xl">🖼️</div>
+                            <p class="text-base font-semibold text-slate-800">Nhấn để tải hình ảnh cần kiểm tra</p>
+                            <p class="text-xs text-slate-500">Hỗ trợ PNG, JPG, WEBP (Tối đa 10MB). Không lưu ảnh vĩnh viễn.</p>
+                        </div>
+                    </div>
+
+                    <div id="image-preview-container" class="hidden space-y-4 pt-2">
+                        <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                            <img id="image-preview-el" class="w-28 h-28 object-cover rounded-xl border border-slate-300 shadow-xs bg-white shrink-0" alt="Ảnh xem trước">
+                            <div class="flex-1 space-y-1.5">
+                                <h4 id="image-file-name" class="font-bold text-base text-slate-900 break-all">filename.jpg</h4>
+                                <p id="image-file-info" class="text-xs text-slate-600">Đang kiểm tra thông số tệp...</p>
+                                <div class="pt-1">
+                                    <button onclick="runImageAnalysis()" id="run-img-analysis-btn" class="bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl shadow-xs transition-colors">
+                                        Phân tích hình ảnh thực tế
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- IMAGE ANALYSIS REPORT -->
+                <div id="image-report-container" class="hidden space-y-6">
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-5">
+                        <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-4">
+                            <h4 class="font-bold text-slate-900 text-lg">Báo cáo Phân tích Hình ảnh</h4>
+                            <div id="image-risk-badge" class="px-4 py-1.5 rounded-full text-sm font-bold"></div>
+                        </div>
+
+                        <!-- 1. Actual Content -->
+                        <div class="space-y-1.5 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                            <h5 class="font-bold text-base text-slate-900">1. Nội dung thực sự quan sát được trong ảnh</h5>
+                            <div id="img-report-content" class="text-base text-slate-700 leading-relaxed formatted-output"></div>
+                        </div>
+
+                        <!-- 2. Wikipedia-style Expandable Markers -->
+                        <div class="space-y-2.5">
+                            <h5 class="font-bold text-base text-slate-900">2. Chi tiết kiểm tra dấu hiệu chỉnh sửa / AI (Bấm vào từng mục để mở giải thích)</h5>
+                            <div id="img-wiki-markers" class="space-y-2.5">
+                                <!-- Populated dynamically -->
+                            </div>
+                        </div>
+
+                        <!-- 3. Unverified Details -->
+                        <div class="space-y-1.5 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                            <h5 class="font-bold text-base text-slate-900">3. Những chi tiết chưa thể kiểm chứng</h5>
+                            <div id="img-report-unverified" class="text-base text-slate-700 leading-relaxed formatted-output"></div>
+                        </div>
+
+                        <!-- 4. Scam Risk -->
+                        <div class="space-y-1.5 bg-amber-50/70 p-4 rounded-xl border border-amber-200">
+                            <h5 class="font-bold text-base text-amber-950">4. Đánh giá nguy cơ lừa đảo hoặc mạo danh</h5>
+                            <div id="img-report-scam" class="text-base text-amber-900 leading-relaxed formatted-output"></div>
+                        </div>
+
+                        <!-- 5. Verification Guide -->
+                        <div class="space-y-1.5 bg-blue-50/70 p-4 rounded-xl border border-blue-200">
+                            <h5 class="font-bold text-base text-blue-950">5. Hướng dẫn xác minh tiếp theo</h5>
+                            <div id="img-report-guide" class="text-base text-blue-900 leading-relaxed formatted-output"></div>
+                        </div>
+                    </div>
+
+                    <!-- Post Analysis Q&A Box -->
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-4">
+                        <h4 class="font-bold text-slate-900 text-base">💬 Hỏi thêm về hình ảnh này</h4>
+                        <div id="img-qa-messages" class="space-y-3 max-h-72 overflow-y-auto">
+                            <p class="text-sm text-slate-500">Bạn có thể hỏi tiếp: "Vì sao chi tiết này đáng nghi?", "Ảnh này có chắc chắn là Deepfake không?", "Nếu ảnh này dùng để giả mạo mình thì phải làm gì?"</p>
+                        </div>
+                        <div class="flex gap-2.5">
+                            <input type="text" id="img-qa-input" placeholder="Đặt câu hỏi tiếp theo về bức ảnh vừa phân tích..." class="flex-1 px-4 py-2.5 border border-slate-300 rounded-xl text-base focus:ring-2 focus:ring-brand-500 outline-none" onkeypress="handleImgQAPress(event)">
+                            <button onclick="sendImageQA()" id="btn-img-qa" class="bg-brand-600 hover:bg-brand-700 text-white px-5 py-2.5 rounded-xl text-base font-semibold shrink-0">Hỏi AI</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 3: VIDEO ANALYSIS -->
+            <div id="section-3" class="section-content hidden max-w-4xl mx-auto p-4 sm:p-6 space-y-6">
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-4">
+                    <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-4">
+                        <div>
+                            <h3 class="text-lg font-bold text-slate-900">Phân tích Video & Kiểm chứng Khung hình Thực tế</h3>
+                            <p class="text-sm text-slate-600 mt-0.5">Trích xuất các khung hình tại nhiều mốc thời gian thực tế để kiểm tra tính nhất quán khuôn mặt và bối cảnh.</p>
+                        </div>
+                        <span class="text-xs bg-purple-50 text-purple-700 px-3 py-1.5 rounded-full font-semibold">Lấy mẫu đa mốc thời gian</span>
+                    </div>
+
+                    <div class="border-2 border-dashed border-slate-300 rounded-2xl p-7 text-center hover:bg-slate-50 transition-colors cursor-pointer" onclick="document.getElementById('video-file-input').click()">
+                        <input type="file" id="video-file-input" accept="video/mp4, video/webm, video/quicktime" class="hidden" onchange="handleVideoUpload(event)">
+                        <div class="max-w-md mx-auto space-y-2">
+                            <div class="w-12 h-12 bg-purple-50 text-purple-600 rounded-xl mx-auto flex items-center justify-center text-2xl">🎬</div>
+                            <p class="text-base font-semibold text-slate-800">Nhấn để chọn tệp video cần phân tích</p>
+                            <p class="text-xs text-slate-500">Hỗ trợ MP4, WEBM, MOV (Tối đa 50MB)</p>
+                        </div>
+                    </div>
+
+                    <div id="video-preview-container" class="hidden space-y-4 pt-2">
+                        <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
+                            <video id="video-preview-el" controls class="w-full max-h-72 rounded-xl bg-black" preload="metadata"></video>
+                            <div class="flex flex-wrap items-center justify-between gap-3">
+                                <div>
+                                    <h4 id="video-file-name" class="font-bold text-base text-slate-900 break-all">video.mp4</h4>
+                                    <p id="video-file-info" class="text-xs text-slate-600">Đang đọc thông số thời lượng và độ phân giải...</p>
+                                </div>
+                                <button onclick="runVideoAnalysis()" id="run-vid-analysis-btn" class="bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl shadow-xs transition-colors">
+                                    Trích xuất khung hình & Phân tích
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VIDEO REPORT CONTAINER -->
+                <div id="video-report-container" class="hidden space-y-6">
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-5">
+                        <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-4">
+                            <h4 class="font-bold text-slate-900 text-lg">Báo cáo Phân tích Video</h4>
+                            <div id="video-risk-badge" class="px-4 py-1.5 rounded-full text-sm font-bold"></div>
+                        </div>
+
+                        <!-- 1. Video Info & Sampled Frames -->
+                        <div class="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                            <h5 class="font-bold text-base text-slate-900">1. Thông tin video & Các khung hình thực tế đã trích xuất</h5>
+                            <div id="vid-report-info" class="text-base text-slate-700 leading-relaxed formatted-output"></div>
+                            <div id="vid-sampled-frames" class="grid grid-cols-2 sm:grid-cols-5 gap-2.5 pt-2"></div>
+                        </div>
+
+                        <!-- 2. Content & Consistency -->
+                        <div class="space-y-1.5 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                            <h5 class="font-bold text-base text-slate-900">2. Nội dung quan sát & Đánh giá dấu hiệu bất thường</h5>
+                            <div id="vid-report-anomalies" class="text-base text-slate-700 leading-relaxed formatted-output"></div>
+                        </div>
+
+                        <!-- 3. Limitations -->
+                        <div class="space-y-1.5 bg-amber-50/70 p-4 rounded-xl border border-amber-200">
+                            <h5 class="font-bold text-base text-amber-950">3. Giới hạn phân tích kỹ thuật</h5>
+                            <div id="vid-report-limits" class="text-base text-amber-900 leading-relaxed formatted-output"></div>
+                        </div>
+
+                        <!-- 4. Verification Guide -->
+                        <div class="space-y-1.5 bg-blue-50/70 p-4 rounded-xl border border-blue-200">
+                            <h5 class="font-bold text-base text-blue-950">4. Hướng dẫn xác minh video</h5>
+                            <div id="vid-report-guide" class="text-base text-blue-900 leading-relaxed formatted-output"></div>
+                        </div>
+                    </div>
+
+                    <!-- Post Analysis Q&A Box -->
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-4">
+                        <h4 class="font-bold text-slate-900 text-base">💬 Hỏi thêm về video này</h4>
+                        <div id="vid-qa-messages" class="space-y-3 max-h-72 overflow-y-auto">
+                            <p class="text-sm text-slate-500">Bạn có thể hỏi tiếp: "Khung hình nào có điểm đáng lưu ý?", "Video này có chắc là Deepfake không?", "Cách kiểm tra nguồn gốc video này?"</p>
+                        </div>
+                        <div class="flex gap-2.5">
+                            <input type="text" id="vid-qa-input" placeholder="Đặt câu hỏi tiếp theo về video vừa phân tích..." class="flex-1 px-4 py-2.5 border border-slate-300 rounded-xl text-base focus:ring-2 focus:ring-brand-500 outline-none" onkeypress="handleVidQAPress(event)">
+                            <button onclick="sendVideoQA()" id="btn-vid-qa" class="bg-brand-600 hover:bg-brand-700 text-white px-5 py-2.5 rounded-xl text-base font-semibold shrink-0">Hỏi AI</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 4: AUDIO ANALYSIS -->
+            <div id="section-4" class="section-content hidden max-w-4xl mx-auto p-4 sm:p-6 space-y-6">
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-4">
+                    <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-4">
+                        <div>
+                            <h3 class="text-lg font-bold text-slate-900">Phân tích Âm thanh & Nhận dạng Lời nói Tiếng Việt</h3>
+                            <p class="text-sm text-slate-600 mt-0.5">Chép lời chính xác từ tệp âm thanh thực tế, phân tách nguy cơ kịch bản lừa đảo và đánh giá giọng nói AI.</p>
+                        </div>
+                        <span class="text-xs bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-full font-semibold">Xử lý âm thanh gốc</span>
+                    </div>
+
+                    <div class="border-2 border-dashed border-slate-300 rounded-2xl p-7 text-center hover:bg-slate-50 transition-colors cursor-pointer" onclick="document.getElementById('audio-file-input').click()">
+                        <input type="file" id="audio-file-input" accept="audio/*" class="hidden" onchange="handleAudioUpload(event)">
+                        <div class="max-w-md mx-auto space-y-2">
+                            <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl mx-auto flex items-center justify-center text-2xl">🎙️</div>
+                            <p class="text-base font-semibold text-slate-800">Nhấn để chọn tệp âm thanh (MP3, WAV, M4A, OGG)</p>
+                            <p class="text-xs text-slate-500">Tối đa 20MB. Không tự bịa nội dung khi âm thanh nhiễu hoặc không có tiếng.</p>
+                        </div>
+                    </div>
+
+                    <div id="audio-preview-container" class="hidden space-y-4 pt-2">
+                        <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
+                            <audio id="audio-preview-el" controls class="w-full"></audio>
+                            <div class="flex flex-wrap items-center justify-between gap-3">
+                                <div>
+                                    <h4 id="audio-file-name" class="font-bold text-base text-slate-900 break-all">audio.mp3</h4>
+                                    <p id="audio-file-info" class="text-xs text-slate-600">Đang sẵn sàng phân tích...</p>
+                                </div>
+                                <button onclick="runAudioAnalysis()" id="run-aud-analysis-btn" class="bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl shadow-xs transition-colors">
+                                    Nhận dạng lời nói & Phân tích
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AUDIO REPORT CONTAINER -->
+                <div id="audio-report-container" class="hidden space-y-6">
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-5">
+                        <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-4">
+                            <h4 class="font-bold text-slate-900 text-lg">Báo cáo Phân tích Âm thanh</h4>
+                            <div id="audio-risk-badge" class="px-4 py-1.5 rounded-full text-sm font-bold"></div>
+                        </div>
+
+                        <!-- 1. Transcription -->
+                        <div class="space-y-2 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                            <h5 class="font-bold text-base text-slate-900">1. Nội dung lời nói đã nhận dạng thực tế</h5>
+                            <div id="aud-report-transcript" class="text-base text-slate-800 bg-white p-4 rounded-xl border border-slate-200 leading-relaxed formatted-output"></div>
+                        </div>
+
+                        <!-- 2. Scam Pattern Analysis -->
+                        <div class="space-y-1.5 bg-amber-50/70 p-4 rounded-xl border border-amber-200">
+                            <h5 class="font-bold text-base text-amber-950">2. Phân tích nguy cơ lừa đảo từ nội dung lời nói</h5>
+                            <div id="aud-report-scam" class="text-base text-amber-900 leading-relaxed formatted-output"></div>
+                        </div>
+
+                        <!-- 3. Synthetic Voice Assessment -->
+                        <div class="space-y-1.5 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                            <h5 class="font-bold text-base text-slate-900">3. Đánh giá độc lập về khả năng giọng nói tổng hợp AI</h5>
+                            <div id="aud-report-synth" class="text-base text-slate-700 leading-relaxed formatted-output"></div>
+                        </div>
+
+                        <!-- 4. Guidelines -->
+                        <div class="space-y-1.5 bg-blue-50/70 p-4 rounded-xl border border-blue-200">
+                            <h5 class="font-bold text-base text-blue-950">4. Hướng dẫn xử lý an toàn</h5>
+                            <div id="aud-report-guide" class="text-base text-blue-900 leading-relaxed formatted-output"></div>
+                        </div>
+                    </div>
+
+                    <!-- Post Analysis Q&A Box -->
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-4">
+                        <h4 class="font-bold text-slate-900 text-base">💬 Hỏi thêm về âm thanh này</h4>
+                        <div id="aud-qa-messages" class="space-y-3 max-h-72 overflow-y-auto">
+                            <p class="text-sm text-slate-500">Bạn có thể hỏi tiếp: "Người này đang dùng thủ đoạn gì?", "Câu nói nào nguy hiểm nhất?", "Giọng này có chắc chắn là AI không?"</p>
+                        </div>
+                        <div class="flex gap-2.5">
+                            <input type="text" id="aud-qa-input" placeholder="Đặt câu hỏi tiếp theo về đoạn âm thanh..." class="flex-1 px-4 py-2.5 border border-slate-300 rounded-xl text-base focus:ring-2 focus:ring-brand-500 outline-none" onkeypress="handleAudQAPress(event)">
+                            <button onclick="sendAudioQA()" id="btn-aud-qa" class="bg-brand-600 hover:bg-brand-700 text-white px-5 py-2.5 rounded-xl text-base font-semibold shrink-0">Hỏi AI</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 5: QUIZ (Question font enlarged clearly; option text stays standard size) -->
+            <div id="section-5" class="section-content hidden max-w-4xl mx-auto p-4 sm:p-6 space-y-6">
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-6">
+                    <div class="border-b border-slate-100 pb-4">
+                        <h3 class="text-xl font-bold text-slate-900">Luyện tập Tình huống An toàn số</h3>
+                        <p class="text-sm text-slate-600 mt-1">Hoàn thành tình huống để tích lũy điểm năng lực A–B–G.</p>
+                    </div>
+
+                    <div id="quiz-container" class="space-y-7">
+                        <!-- Question 1 -->
+                        <div class="space-y-3.5 bg-slate-50 p-5 rounded-2xl border border-slate-200">
+                            <h4 class="text-xl sm:text-[22px] font-bold text-slate-900 leading-snug">
+                                Câu 1: Khi nhận được cuộc gọi video từ số lạ hiển thị khuôn mặt người thân yêu cầu chuyển tiền gấp vì đang cấp cứu, bạn nên làm gì đầu tiên?
+                            </h4>
+                            <div class="space-y-2.5 pt-1">
+                                <label class="flex items-start gap-3 p-3.5 bg-white rounded-xl border border-slate-200 hover:bg-slate-50 cursor-pointer text-[15.5px] text-slate-700 font-normal">
+                                    <input type="radio" name="q1" value="wrong" class="mt-1 w-4 h-4 text-brand-600 shrink-0">
+                                    <span>Chuyển tiền ngay vì thấy đúng khuôn mặt người thân đang gặp nguy hiểm.</span>
+                                </label>
+                                <label class="flex items-start gap-3 p-3.5 bg-white rounded-xl border border-slate-200 hover:bg-slate-50 cursor-pointer text-[15.5px] text-slate-700 font-normal">
+                                    <input type="radio" name="q1" value="correct" class="mt-1 w-4 h-4 text-brand-600 shrink-0">
+                                    <span>Cúp máy, gọi trực tiếp vào số điện thoại quen thuộc của người thân hoặc hỏi câu hỏi bí mật chỉ gia đình biết để xác thực.</span>
+                                </label>
+                                <label class="flex items-start gap-3 p-3.5 bg-white rounded-xl border border-slate-200 hover:bg-slate-50 cursor-pointer text-[15.5px] text-slate-700 font-normal">
+                                    <input type="radio" name="q1" value="wrong" class="mt-1 w-4 h-4 text-brand-600 shrink-0">
+                                    <span>Chụp ảnh màn hình cuộc gọi rồi gửi lại cho chính số lạ đó để hỏi lại.</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Question 2 -->
+                        <div class="space-y-3.5 bg-slate-50 p-5 rounded-2xl border border-slate-200">
+                            <h4 class="text-xl sm:text-[22px] font-bold text-slate-900 leading-snug">
+                                Câu 2: Vì sao không thể kết luận ngay một bức ảnh mờ hoặc thiếu sáng là ảnh do AI tạo ra?
+                            </h4>
+                            <div class="space-y-2.5 pt-1">
+                                <label class="flex items-start gap-3 p-3.5 bg-white rounded-xl border border-slate-200 hover:bg-slate-50 cursor-pointer text-[15.5px] text-slate-700 font-normal">
+                                    <input type="radio" name="q2" value="wrong" class="mt-1 w-4 h-4 text-brand-600 shrink-0">
+                                    <span>Vì ảnh do AI tạo ra lúc nào cũng sắc nét tuyệt đối 100%.</span>
+                                </label>
+                                <label class="flex items-start gap-3 p-3.5 bg-white rounded-xl border border-slate-200 hover:bg-slate-50 cursor-pointer text-[15.5px] text-slate-700 font-normal">
+                                    <input type="radio" name="q2" value="correct" class="mt-1 w-4 h-4 text-brand-600 shrink-0">
+                                    <span>Vì ảnh chụp thật cũng có thể bị mờ do camera rung, thiếu sáng hoặc lỗi nén khi gửi qua mạng xã hội.</span>
+                                </label>
+                                <label class="flex items-start gap-3 p-3.5 bg-white rounded-xl border border-slate-200 hover:bg-slate-50 cursor-pointer text-[15.5px] text-slate-700 font-normal">
+                                    <input type="radio" name="q2" value="wrong" class="mt-1 w-4 h-4 text-brand-600 shrink-0">
+                                    <span>Vì công nghệ AI hiện nay không thể tạo ra ảnh mờ.</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pt-2 flex flex-wrap items-center justify-between gap-4">
+                        <button onclick="submitQuiz()" class="bg-brand-600 hover:bg-brand-700 text-white font-semibold px-6 py-3 rounded-xl shadow-md transition-colors text-base">
+                            Nộp bài & Cập nhật điểm
+                        </button>
+                        <div id="quiz-result-box" class="text-base font-bold text-slate-800"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 6: KNOWLEDGE & USER GUIDE (Enlarged typography, lessons open ONLY when clicked, no export, no API key, replaced experimental data with concise guide) -->
+            <div id="section-6" class="section-content hidden max-w-4xl mx-auto p-4 sm:p-6 space-y-6">
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-6">
+                    <div class="border-b border-slate-100 pb-4">
+                        <h3 class="text-xl sm:text-2xl font-bold text-slate-900">📚 Cẩm nang An toàn Số & Hướng dẫn Sử dụng</h3>
+                        <p class="text-base text-slate-600 mt-1">Bấm chọn từng chủ đề bên dưới để mở nội dung bài học chi tiết.</p>
+                    </div>
+
+                    <!-- Lessons list (Appear ONLY when clicked) -->
+                    <div class="space-y-4">
+                        <div class="border border-slate-200 rounded-2xl overflow-hidden">
+                            <button onclick="toggleLesson('lesson-1')" class="w-full px-5 py-4 bg-slate-50 hover:bg-slate-100 flex items-center justify-between font-bold text-lg text-slate-900 text-left transition-colors">
+                                <span>1. Nhận diện công nghệ Deepfake & Nguyên tắc kiểm chứng</span>
+                                <span id="icon-lesson-1" class="text-slate-500 text-lg ml-3">▼</span>
+                            </button>
+                            <div id="lesson-1" class="hidden p-5 bg-white border-t border-slate-100 text-base text-slate-700 space-y-3 leading-relaxed">
+                                <p><strong>Deepfake</strong> là kỹ thuật dùng Trí tuệ nhân tạo để ghép khuôn mặt hoặc mô phỏng giọng nói của một người nhằm tạo ra hình ảnh, video hoặc đoạn ghi âm không có thật.</p>
+                                <p><strong>Cách nhận biết thực tế:</strong> Quan sát kỹ ranh giới giữa khuôn mặt và tóc, sự đồng nhất của ánh sáng, bóng đổ, độ tự nhiên của mắt và sự khớp giữa khẩu hình với âm thanh.</p>
+                                <p><strong>Nguyên tắc phòng vệ:</strong> Luôn xác minh qua kênh liên lạc độc lập thứ hai (gọi số điện thoại lưu sẵn, hỏi thông tin riêng tư) trước mọi yêu cầu chuyển tiền hoặc cung cấp dữ liệu.</p>
+                            </div>
+                        </div>
+
+                        <div class="border border-slate-200 rounded-2xl overflow-hidden">
+                            <button onclick="toggleLesson('lesson-2')" class="w-full px-5 py-4 bg-slate-50 hover:bg-slate-100 flex items-center justify-between font-bold text-lg text-slate-900 text-left transition-colors">
+                                <span>2. Xử lý khẩn cấp khi lộ CCCD, Mật khẩu hoặc mã OTP</span>
+                                <span id="icon-lesson-2" class="text-slate-500 text-lg ml-3">▼</span>
+                            </button>
+                            <div id="lesson-2" class="hidden p-5 bg-white border-t border-slate-100 text-base text-slate-700 space-y-3 leading-relaxed">
+                                <p><strong>Khi lộ thông tin CCCD:</strong> Theo dõi thông tin định danh trên ứng dụng VNeID, cảnh giác trước các cuộc gọi mạo danh công an/viện kiểm sát biết rõ số CCCD của bạn để dọa nạt.</p>
+                                <p><strong>Khi lộ Mật khẩu hoặc OTP:</strong> Đổi mật khẩu ngay lập tức, bật xác thực hai yếu tố (2FA), đăng xuất khỏi tất cả phiên đăng nhập lạ và liên hệ tổng đài ngân hàng nếu liên quan đến tài khoản thanh toán.</p>
+                            </div>
+                        </div>
+
+                        <div class="border border-slate-200 rounded-2xl overflow-hidden">
+                            <button onclick="toggleLesson('lesson-3')" class="w-full px-5 py-4 bg-slate-50 hover:bg-slate-100 flex items-center justify-between font-bold text-lg text-slate-900 text-left transition-colors">
+                                <span>3. Phòng tránh lừa đảo mạo danh & Chiếm đoạt tài khoản học đường</span>
+                                <span id="icon-lesson-3" class="text-slate-500 text-lg ml-3">▼</span>
+                            </button>
+                            <div id="lesson-3" class="hidden p-5 bg-white border-t border-slate-100 text-base text-slate-700 space-y-3 leading-relaxed">
+                                <p>Kẻ gian thường giả mạo giáo viên báo tin khẩn, giả danh công an thông báo liên quan đường dây phạm tội, hoặc gửi đường dẫn bình chọn cuộc thi để chiếm quyền điều khiển tài khoản mạng xã hội.</p>
+                                <p><strong>Quy tắc 3 Không:</strong> Không cài đặt tệp tin lạ (.apk), không nhập mật khẩu vào đường dẫn gửi qua tin nhắn, không chuyển tiền theo yêu cầu qua điện thoại.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Concise User Guide -->
+                    <div class="pt-4 border-t border-slate-200 space-y-3">
+                        <h4 class="text-lg sm:text-xl font-bold text-slate-900">📖 Hướng dẫn sử dụng BK SafeID Coach</h4>
+                        <div class="bg-brand-50/60 p-5 rounded-2xl border border-brand-100 text-base text-slate-800 space-y-2.5 leading-relaxed">
+                            <p><strong>Phần 1 (Trò chuyện an toàn số):</strong> Nhập tình huống cụ thể để nhận hướng dẫn xử lý từng bước ngắn gọn, đúng trọng tâm.</p>
+                            <p><strong>Phần 2, 3, 4 (Phân tích Ảnh, Video, Âm thanh):</strong> Tải tệp thực tế lên để hệ thống kiểm tra dữ liệu, hiển thị mức độ nguy cơ (Thấp, Trung bình, Cao hoặc Chưa đủ cơ sở kết luận) và hỏi đáp thêm ngay bên dưới báo cáo.</p>
+                            <p><strong>Phần 5 (Luyện tập):</strong> Trả lời tình huống thực tế để củng cố kỹ năng và nhận điểm A–B–G.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- SCRIPT LOGIC -->
+    <script>
+        // =========================================================================
+        // 1. STATE & STORAGE MANAGEMENT (24h auto-expire temporary session support)
+        // =========================================================================
+        const STORAGE_KEY = 'bk_safeid_session_v2';
+        let currentUser = null;
+        let scores = { a: 0, b: 0, g: 0 };
+        let chatHistoryData = [];
+        let isHistorySaved = false;
+
+        // Contexts for multimodal follow-up Q&A
+        let imageSessionContext = null;
+        let videoSessionContext = null;
+        let audioSessionContext = null;
+
+        // =========================================================================
+        // 2. CLEAN MARKDOWN/ASTERISK STRIPPER & HTML FORMATTER
+        //    Đảm bảo không bao giờ dính ký tự * hoặc ** trong giao diện người dùng
+        // =========================================================================
+        function formatCleanResponse(rawText) {
+            if (!rawText) return '';
+            let text = String(rawText).trim();
+
+            // Escape basic HTML tags first to prevent XSS while preserving structure
+            text = text
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+
+            // Convert **bold** into <strong>bold</strong>
+            text = text.replace(/\*\*([^*]+?)\*\*/g, '<strong>$1</strong>');
+
+            // Convert *italic* or leftover single asterisks around words into clean text/emphasis
+            text = text.replace(/\*([^*\n]+?)\*/g, '$1');
+
+            // Process line by line for clean lists and paragraphs
+            const lines = text.split(/\r?\n/);
+            let html = '';
+            let inUl = false;
+            let inOl = false;
+
+            for (let line of lines) {
+                // Strip any remaining stray asterisks
+                let cleanedLine = line.replace(/\*/g, '').trim();
+
+                if (!cleanedLine) {
+                    if (inUl) { html += '</ul>'; inUl = false; }
+                    if (inOl) { html += '</ol>'; inOl = false; }
+                    continue;
+                }
+
+                // Bullet item (- or •)
+                if (/^[-•]\s+/.test(cleanedLine)) {
+                    if (inOl) { html += '</ol>'; inOl = false; }
+                    if (!inUl) { html += '<ul>'; inUl = true; }
+                    const itemContent = cleanedLine.replace(/^[-•]\s+/, '');
+                    html += `<li>${itemContent}</li>`;
+                }
+                // Numbered item (1. or 1))
+                else if (/^\d+[.)]\s+/.test(cleanedLine)) {
+                    if (inUl) { html += '</ul>'; inUl = false; }
+                    if (!inOl) { html += '<ol>'; inOl = true; }
+                    const itemContent = cleanedLine.replace(/^\d+[.)]\s+/, '');
+                    html += `<li>${itemContent}</li>`;
+                }
+                else {
+                    if (inUl) { html += '</ul>'; inUl = false; }
+                    if (inOl) { html += '</ol>'; inOl = false; }
+                    html += `<p>${cleanedLine}</p>`;
+                }
+            }
+
+            if (inUl) html += '</ul>';
+            if (inOl) html += '</ol>';
+
+            return html;
+        }
+
+        function stripAllAsterisks(str) {
+            if (!str) return '';
+            return String(str).replace(/\*/g, '').trim();
+        }
+
+        // =========================================================================
+        // 3. TOAST & LOGIN / SCORE MANAGEMENT
+        // =========================================================================
+        let toastTimeout = null;
+        function showToast(message, icon = '⚠️') {
+            const box = document.getElementById('toast-box');
+            document.getElementById('toast-icon').innerText = icon;
+            document.getElementById('toast-text').innerText = message;
+            box.classList.remove('hidden');
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                box.classList.add('hidden');
+            }, 4000);
+        }
+
+        function regenerateAnonId() {
+            const rand = Math.floor(1000 + Math.random() * 9000);
+            document.getElementById('anon-id-input').value = `HS_THPT_${rand}`;
+        }
+
+        function updateScoreUI() {
+            document.getElementById('login-score-a').innerText = scores.a;
+            document.getElementById('login-score-b').innerText = scores.b;
+            document.getElementById('login-score-g').innerText = scores.g;
+            document.getElementById('header-score-a').innerText = scores.a;
+            document.getElementById('header-score-b').innerText = scores.b;
+            document.getElementById('header-score-g').innerText = scores.g;
+        }
+
+        function loadSessionStorage() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (!raw) return;
+                const parsed = JSON.parse(raw);
+                const now = Date.now();
+                // Auto-expire after 24 hours (86400000 ms)
+                if (parsed.expiresAt && now > parsed.expiresAt) {
+                    localStorage.removeItem(STORAGE_KEY);
+                    return;
+                }
+                if (parsed.scores) {
+                    scores = parsed.scores;
+                    updateScoreUI();
+                }
+                if (parsed.saveHistory && Array.isArray(parsed.chatHistory)) {
+                    isHistorySaved = true;
+                    document.getElementById('save-history-toggle').checked = true;
+                    chatHistoryData = parsed.chatHistory;
+                    renderSavedChatHistory();
+                }
+            } catch (e) {
+                localStorage.removeItem(STORAGE_KEY);
+            }
+        }
+
+        function persistSessionData() {
+            if (!isHistorySaved) {
+                localStorage.removeItem(STORAGE_KEY);
+                return;
+            }
+            const payload = {
+                saveHistory: true,
+                scores: scores,
+                chatHistory: chatHistoryData,
+                expiresAt: Date.now() + 24 * 60 * 60 * 1000 // Max 24h retention
+            };
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+        }
+
+        function handleLogin() {
+            const checkbox = document.getElementById('terms-checkbox');
+            if (!checkbox.checked) {
+                showToast("Vui lòng tích chọn đồng ý với Điều khoản sử dụng trước khi vào hệ thống.");
+                return;
+            }
+            const idVal = document.getElementById('anon-id-input').value.trim() || 'HS_THPT_2026';
+            currentUser = idVal;
+            document.getElementById('user-display-id').innerText = currentUser;
+            document.getElementById('login-modal').classList.add('hidden');
+            document.getElementById('main-app').classList.remove('hidden');
+            
+            // Mặc định mở Phần 1 ngay lập tức, không hiển thị thông báo chuyển trang
+            switchTab(1);
+        }
+
+        function handleLogout() {
+            currentUser = null;
+            document.getElementById('main-app').classList.add('hidden');
+            document.getElementById('login-modal').classList.remove('hidden');
+            document.getElementById('terms-checkbox').checked = false;
+        }
+
+        function showTermsModal() {
+            document.getElementById('terms-modal').classList.remove('hidden');
+        }
+
+        function closeTermsModal() {
+            document.getElementById('terms-modal').classList.add('hidden');
+        }
+
+        function switchTab(tabIndex) {
+            document.querySelectorAll('.section-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('border-brand-600', 'text-brand-600', 'font-bold');
+                btn.classList.add('border-transparent', 'text-slate-600', 'font-medium');
+            });
+
+            document.getElementById(`section-${tabIndex}`).classList.remove('hidden');
+            const activeBtn = document.getElementById(`tab-btn-${tabIndex}`);
+            activeBtn.classList.remove('border-transparent', 'text-slate-600', 'font-medium');
+            activeBtn.classList.add('border-brand-600', 'text-brand-600', 'font-bold');
+        }
+
+        // =========================================================================
+        // 4. GEMINI API HELPER WITH EXPONENTIAL BACKOFF
+        // =========================================================================
+        async function callGeminiAPI(payload, retries = 3) {
+            const apiKey = ""; // Runtime injected by Canvas
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+            for (let attempt = 0; attempt <= retries; attempt++) {
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP_${response.status}`);
+                    }
+
+                    const result = await response.json();
+                    const text = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+                    if (!text) {
+                        throw new Error('EMPTY_RESPONSE');
+                    }
+                    return text;
+                } catch (err) {
+                    if (attempt === retries) {
+                        throw err;
+                    }
+                    const delay = Math.pow(2, attempt) * 1000;
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                }
+            }
+        }
+
+        // =========================================================================
+        // 5. SECTION 1: FOCUSED DIGITAL SAFETY CHATBOT
+        // =========================================================================
+        function toggleHistorySetting() {
+            isHistorySaved = document.getElementById('save-history-toggle').checked;
+            if (!isHistorySaved) {
+                localStorage.removeItem(STORAGE_KEY);
+                showToast("Đã tắt lưu lịch sử. Dữ liệu chỉ giữ tạm trong phiên hiện tại.", "🔒");
+            } else {
+                persistSessionData();
+                showToast("Đã bật lưu lịch sử phiên (tự động xóa sau 24 giờ).", "🕒");
+            }
+        }
+
+        function renderSavedChatHistory() {
+            const chatBox = document.getElementById('chat-messages');
+            if (chatHistoryData.length === 0) return;
+            chatBox.innerHTML = '';
+            chatHistoryData.forEach(turn => {
+                if (turn.role === 'user') {
+                    chatBox.innerHTML += `
+                        <div class="flex gap-3 max-w-3xl ml-auto flex-row-reverse">
+                            <div class="w-9 h-9 rounded-full bg-brand-600 text-white flex items-center justify-center shrink-0 font-bold text-sm">Bạn</div>
+                            <div class="bg-brand-600 text-white rounded-2xl px-4 py-3 text-base leading-relaxed shadow-2xs">
+                                ${formatCleanResponse(turn.text)}
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    chatBox.innerHTML += `
+                        <div class="flex gap-3 max-w-3xl">
+                            <div class="w-9 h-9 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center shrink-0 font-bold text-sm">AI</div>
+                            <div class="bg-slate-100 rounded-2xl px-4 py-3.5 text-slate-800 text-base leading-relaxed shadow-2xs formatted-output">
+                                ${formatCleanResponse(turn.text)}
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function clearChatHistory() {
+            chatHistoryData = [];
+            localStorage.removeItem(STORAGE_KEY);
+            const chatBox = document.getElementById('chat-messages');
+            chatBox.innerHTML = `
+                <div class="flex gap-3 max-w-3xl">
+                    <div class="w-9 h-9 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center shrink-0 font-bold text-sm">AI</div>
+                    <div class="bg-slate-100 rounded-2xl px-4 py-3.5 text-slate-800 text-base leading-relaxed shadow-2xs formatted-output">
+                        <p>Đã làm mới cuộc trò chuyện. Bạn đang gặp vấn đề gì về an toàn số hoặc bảo vệ thông tin cá nhân?</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        function sendQuickPrompt(text) {
+            document.getElementById('chat-input').value = text;
+            sendChatMessage();
+        }
+
+        function handleChatKeyPress(e) {
+            if (e.key === 'Enter') sendChatMessage();
+        }
+
+        async function sendChatMessage() {
+            const inputEl = document.getElementById('chat-input');
+            const sendBtn = document.getElementById('send-chat-btn');
+            const query = inputEl.value.trim();
+            if (!query) return;
+
+            const chatBox = document.getElementById('chat-messages');
+            
+            // Render user turn
+            chatBox.innerHTML += `
+                <div class="flex gap-3 max-w-3xl ml-auto flex-row-reverse">
+                    <div class="w-9 h-9 rounded-full bg-brand-600 text-white flex items-center justify-center shrink-0 font-bold text-sm">Bạn</div>
+                    <div class="bg-brand-600 text-white rounded-2xl px-4 py-3 text-base leading-relaxed shadow-2xs">
+                        ${formatCleanResponse(query)}
+                    </div>
+                </div>
+            `;
+            inputEl.value = '';
+            inputEl.disabled = true;
+            sendBtn.disabled = true;
+
+            const loadingId = 'chat-loading-' + Date.now();
+            chatBox.innerHTML += `
+                <div id="${loadingId}" class="flex gap-3 max-w-3xl">
+                    <div class="w-9 h-9 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center shrink-0 font-bold text-sm">AI</div>
+                    <div class="bg-slate-100 rounded-2xl px-4 py-3.5 text-slate-500 text-base italic">
+                        Đang phân tích tình huống...
+                    </div>
+                </div>
+            `;
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            chatHistoryData.push({ role: 'user', text: query });
+
+            const systemInstruction = `Bạn là BK SafeID Coach, chuyên gia tư vấn an toàn số, bảo vệ dữ liệu cá nhân và phòng chống lừa đảo trực tuyến dành cho học sinh THPT tại Việt Nam.
+
+QUY TẮC BẮT BUỘC:
+1. PHẠM VI HỖ TRỢ: Chỉ trả lời các câu hỏi liên quan đến an toàn số, bảo vệ thông tin cá nhân, bảo mật tài khoản, lộ CCCD, lộ OTP, lộ mật khẩu, mất tài khoản, lừa đảo trực tuyến, công nghệ AI/Deepfake và an toàn ứng dụng.
+2. TỪ CHỐI NGOÀI PHẠM VI: Nếu câu hỏi hoàn toàn không liên quan đến an toàn số hoặc bảo vệ thông tin cá nhân (ví dụ: giải bài tập toán, văn, nấu ăn, bóng đá, giải trí...), BẮT BUỘC trả lời nguyên văn duy nhất câu sau, không thêm bớt bất kỳ từ nào:
+Xin lỗi, câu hỏi này nằm ngoài phạm vi hỗ trợ của BK SafeID Coach. Mình chỉ hỗ trợ các vấn đề liên quan đến an toàn số và bảo vệ thông tin cá nhân.
+3. NHẬN DIỆN ĐÚNG TRỌNG TÂM: Phân biệt rõ từng tình huống (lộ số CCCD vs lộ ảnh CCCD vs lộ OTP vs lộ mật khẩu vs mất quyền truy cập tài khoản vs lừa đảo chuyển tiền) và đi thẳng vào cách xử lý cho đúng tình huống đó.
+4. CẤU TRÚC TRẢ LỜI:
+   - Không chào hỏi dài dòng, không dùng lời khuyên chung chung sáo rỗng.
+   - Đưa ra từ 2 đến 5 bước hành động cụ thể, rõ ràng, ưu tiên xử lý khẩn cấp trước.
+   - Không lặp lại lời khuyên đã nêu ở lượt trước trong cùng hội thoại.
+   - Sau khi hướng dẫn xong, chỉ hỏi tối đa 1 câu hỏi ngắn gọn cần thiết để làm rõ tình huống nếu cần.
+5. ĐỊNH DẠNG VĂN BẢN: Tuyệt đối KHÔNG dùng ký tự dấu sao (* hoặc **) để trang trí hay in đậm. Chỉ viết tiếng Việt tự nhiên, xuống dòng rõ ràng hoặc đánh số 1., 2., 3.`;
+
+            const contentsPayload = chatHistoryData.slice(-8).map(turn => ({
+                role: turn.role === 'user' ? 'user' : 'model',
+                parts: [{ text: turn.text }]
+            }));
+
+            let botResponse = "";
+            try {
+                botResponse = await callGeminiAPI({
+                    contents: contentsPayload,
+                    systemInstruction: { parts: [{ text: systemInstruction }] },
+                    generationConfig: {
+                        temperature: 0.2,
+                        maxOutputTokens: 700
+                    }
+                });
+                scores.a += 1;
+                updateScoreUI();
+            } catch (err) {
+                botResponse = "Hệ thống AI tạm thời gián đoạn kết nối. Bạn vui lòng kiểm tra mạng và gửi lại câu hỏi sau ít giây.";
+            }
+
+            const loaderEl = document.getElementById(loadingId);
+            if (loaderEl) loaderEl.remove();
+
+            chatHistoryData.push({ role: 'model', text: botResponse });
+            persistSessionData();
+
+            chatBox.innerHTML += `
+                <div class="flex gap-3 max-w-3xl">
+                    <div class="w-9 h-9 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center shrink-0 font-bold text-sm">AI</div>
+                    <div class="bg-slate-100 rounded-2xl px-4 py-3.5 text-slate-800 text-base leading-relaxed shadow-2xs formatted-output">
+                        ${formatCleanResponse(botResponse)}
+                    </div>
+                </div>
+            `;
+            inputEl.disabled = false;
+            sendBtn.disabled = false;
+            inputEl.focus();
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        // =========================================================================
+        // 6. SECTION 2: REAL MULTIMODAL IMAGE ANALYSIS
+        // =========================================================================
+        let selectedImageData = null; // { base64, mimeType, name, size, width, height }
+
+        function handleImageUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            if (!file.type.startsWith('image/')) {
+                showToast("Tệp không hợp lệ. Vui lòng chọn tệp hình ảnh (PNG, JPG, WEBP).");
+                return;
+            }
+            if (file.size > 10 * 1024 * 1024) {
+                showToast("Kích thước ảnh vượt quá 10MB. Vui lòng chọn ảnh nhẹ hơn.");
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                const dataUrl = evt.target.result;
+                const img = new Image();
+                img.onload = function() {
+                    const base64 = dataUrl.split(',')[1];
+                    selectedImageData = {
+                        base64: base64,
+                        mimeType: file.type,
+                        name: file.name,
+                        sizeMB: (file.size / (1024 * 1024)).toFixed(2),
+                        width: img.width,
+                        height: img.height
+                    };
+
+                    document.getElementById('image-preview-el').src = dataUrl;
+                    document.getElementById('image-file-name').innerText = file.name;
+                    document.getElementById('image-file-info').innerText = `Độ phân giải: ${img.width}x${img.height}px • Dung lượng: ${selectedImageData.sizeMB} MB • Định dạng: ${file.type}`;
+                    document.getElementById('image-preview-container').classList.remove('hidden');
+                    document.getElementById('image-report-container').classList.add('hidden');
+                };
+                img.onerror = function() {
+                    showToast("Không thể giải mã tệp ảnh này. Tệp có thể bị hỏng.");
+                };
+                img.src = dataUrl;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function getRiskBadgeStyle(level) {
+            const normalized = (level || '').toLowerCase();
+            if (normalized.includes('cao')) return 'bg-red-100 text-red-800 border border-red-200';
+            if (normalized.includes('trung bình')) return 'bg-amber-100 text-amber-800 border border-amber-200';
+            if (normalized.includes('thấp')) return 'bg-emerald-100 text-emerald-800 border border-emerald-200';
+            return 'bg-slate-200 text-slate-800 border border-slate-300';
+        }
+
+        async function runImageAnalysis() {
+            if (!selectedImageData) return;
+            const btn = document.getElementById('run-img-analysis-btn');
+            btn.innerText = "Đang phân tích dữ liệu ảnh thực tế...";
+            btn.disabled = true;
+
+            const prompt = `Hãy phân tích kỹ bức ảnh được đính kèm dưới góc độ chuyên gia giám định hình ảnh và an toàn số cho học sinh THPT.
+YÊU CẦU NGHIÊM NGẶT:
+- Chỉ mô tả và đánh giá dựa trên những gì THỰC SỰ QUAN SÁT ĐƯỢC trong bức ảnh này. Tuyệt đối không suy đoán theo tên tệp hay bịa chi tiết không có trong ảnh.
+- Phân biệt rõ 3 khía cạnh: (1) Nội dung thực sự của ảnh, (2) Dấu hiệu chỉnh sửa/tạo sinh AI, (3) Nguy cơ lừa đảo/mạo danh.
+- Lưu ý: Ảnh mờ, ánh sáng yếu hoặc lỗi nén mạng xã hội KHÔNG đủ để kết luận ảnh do AI tạo. Nếu không có bằng chứng rõ ràng, hãy chọn mức "Chưa đủ cơ sở kết luận" hoặc "Thấp" tùy ngữ cảnh thực tế.
+- Không bịa tỷ lệ phần trăm giả tạo. Không dùng ký tự dấu sao (* hoặc **) trong nội dung trả lời.`;
+
+            const schema = {
+                type: "OBJECT",
+                properties: {
+                    actualContent: {
+                        type: "STRING",
+                        description: "Mô tả khách quan, chính xác những gì thực sự xuất hiện trong ảnh (chủ thể, văn bản nếu là ảnh chụp màn hình tin nhắn, bối cảnh)."
+                    },
+                    markers: {
+                        type: "ARRAY",
+                        description: "Danh sách 2 đến 4 hạng mục kiểm tra kỹ thuật (ví dụ: Khuôn mặt & chi tiết giải phẫu, Ánh sáng & bóng đổ, Chữ viết & giao diện, Bối cảnh & ranh giới).",
+                        items: {
+                            type: "OBJECT",
+                            properties: {
+                                title: { type: "STRING", description: "Tiêu đề ngắn gọn in đậm của hạng mục kiểm tra." },
+                                detail: { type: "STRING", description: "Giải thích cụ thể quan sát được trong ảnh đối với hạng mục này." }
+                            },
+                            required: ["title", "detail"]
+                        }
+                    },
+                    unverifiedDetails: {
+                        type: "STRING",
+                        description: "Những yếu tố chưa thể kiểm chứng chỉ qua bức ảnh này (ví dụ: metadata gốc đã mất, nguồn phát hành ban đầu, vùng bị che khuất/mờ)."
+                    },
+                    scamRiskAnalysis: {
+                        type: "STRING",
+                        description: "Đánh giá xem hình ảnh này có chứa nội dung lừa đảo (giả danh ngân hàng, công an, link độc hại, yêu cầu chuyển tiền/OTP) hoặc nguy cơ bị dùng mạo danh hay không."
+                    },
+                    riskLevel: {
+                        type: "STRING",
+                        enum: ["Thấp", "Trung bình", "Cao", "Chưa đủ cơ sở kết luận"]
+                    },
+                    verificationGuide: {
+                        type: "STRING",
+                        description: "Hướng dẫn 2-3 bước cụ thể để học sinh tự xác minh thêm."
+                    }
+                },
+                required: ["actualContent", "markers", "unverifiedDetails", "scamRiskAnalysis", "riskLevel", "verificationGuide"]
+            };
+
+            try {
+                const rawJson = await callGeminiAPI({
+                    contents: [{
+                        role: "user",
+                        parts: [
+                            { text: prompt },
+                            {
+                                inlineData: {
+                                    mimeType: selectedImageData.mimeType,
+                                    data: selectedImageData.base64
+                                }
+                            }
+                        ]
+                    }],
+                    generationConfig: {
+                        responseMimeType: "application/json",
+                        responseSchema: schema,
+                        temperature: 0.15
+                    }
+                });
+
+                const report = JSON.parse(rawJson);
+                imageSessionContext = {
+                    image: selectedImageData,
+                    report: report,
+                    qaHistory: []
+                };
+
+                const badge = document.getElementById('image-risk-badge');
+                badge.className = `px-4 py-1.5 rounded-full text-sm font-bold ${getRiskBadgeStyle(report.riskLevel)}`;
+                badge.innerText = `Mức độ nguy cơ: ${stripAllAsterisks(report.riskLevel)}`;
+
+                document.getElementById('img-report-content').innerHTML = formatCleanResponse(report.actualContent);
+                document.getElementById('img-report-unverified').innerHTML = formatCleanResponse(report.unverifiedDetails);
+                document.getElementById('img-report-scam').innerHTML = formatCleanResponse(report.scamRiskAnalysis);
+                document.getElementById('img-report-guide').innerHTML = formatCleanResponse(report.verificationGuide);
+
+                // Wikipedia-style collapsible markers (closed initially, user clicks bold header to expand)
+                const wikiContainer = document.getElementById('img-wiki-markers');
+                wikiContainer.innerHTML = '';
+                (report.markers || []).forEach((m, idx) => {
+                    const itemId = `img-wiki-item-${idx}`;
+                    wikiContainer.innerHTML += `
+                        <div class="border border-slate-200 rounded-xl overflow-hidden bg-white">
+                            <button type="button" onclick="toggleWiki('${itemId}')" class="w-full px-4 py-3.5 bg-slate-50 hover:bg-slate-100 flex items-center justify-between font-bold text-base text-slate-900 text-left transition-colors">
+                                <span>${stripAllAsterisks(m.title)}</span>
+                                <span id="icon-${itemId}" class="text-slate-500 text-sm ml-3 shrink-0">▼ Xem giải thích</span>
+                            </button>
+                            <div id="${itemId}" class="hidden p-4 bg-white border-t border-slate-100 text-base text-slate-700 leading-relaxed formatted-output">
+                                ${formatCleanResponse(m.detail)}
+                            </div>
+                        </div>
+                    `;
+                });
+
+                document.getElementById('img-qa-messages').innerHTML = `
+                    <p class="text-sm text-slate-500">Đã lưu ngữ cảnh bức ảnh trong phiên. Bạn có thể hỏi tiếp về các chi tiết vừa phân tích.</p>
+                `;
+                document.getElementById('image-report-container').classList.remove('hidden');
+
+                scores.g += 2;
+                updateScoreUI();
+            } catch (err) {
+                showToast("Không thể hoàn tất phân tích ảnh do lỗi kết nối AI. Vui lòng thử lại.");
+            } finally {
+                btn.innerText = "Phân tích hình ảnh thực tế";
+                btn.disabled = false;
+            }
+        }
+
+        function toggleWiki(id) {
+            const el = document.getElementById(id);
+            const icon = document.getElementById(`icon-${id}`);
+            if (el.classList.contains('hidden')) {
+                el.classList.remove('hidden');
+                icon.innerText = "▲ Thu gọn";
+            } else {
+                el.classList.add('hidden');
+                icon.innerText = "▼ Xem giải thích";
+            }
+        }
+
+        function handleImgQAPress(e) {
+            if (e.key === 'Enter') sendImageQA();
+        }
+
+        async function sendImageQA() {
+            const input = document.getElementById('img-qa-input');
+            const btn = document.getElementById('btn-img-qa');
+            const q = input.value.trim();
+            if (!q || !imageSessionContext) return;
+
+            const qaBox = document.getElementById('img-qa-messages');
+            qaBox.innerHTML += `<div class="bg-indigo-50 text-indigo-950 p-3 rounded-xl text-base ml-8"><strong>Bạn:</strong> ${stripAllAsterisks(q)}</div>`;
+            input.value = '';
+            input.disabled = true;
+            btn.disabled = true;
+
+            const sysPrompt = `Bạn đang trả lời câu hỏi tiếp nối của học sinh về bức ảnh vừa được phân tích.
+Báo cáo phân tích trước đó:
+- Nội dung ảnh: ${imageSessionContext.report.actualContent}
+- Dấu hiệu kiểm tra: ${JSON.stringify(imageSessionContext.report.markers)}
+- Chưa thể kiểm chứng: ${imageSessionContext.report.unverifiedDetails}
+- Nguy cơ lừa đảo: ${imageSessionContext.report.scamRiskAnalysis}
+- Mức độ nguy cơ: ${imageSessionContext.report.riskLevel}
+
+Trả lời ngắn gọn, trung thực, bám sát hình ảnh đính kèm và báo cáo trên. Không bịa chi tiết mới. Không dùng ký tự dấu sao (* hoặc **).`;
+
+            try {
+                const reply = await callGeminiAPI({
+                    contents: [{
+                        role: "user",
+                        parts: [
+                            { text: q },
+                            {
+                                inlineData: {
+                                    mimeType: imageSessionContext.image.mimeType,
+                                    data: imageSessionContext.image.base64
+                                }
+                            }
+                        ]
+                    }],
+                    systemInstruction: { parts: [{ text: sysPrompt }] },
+                    generationConfig: { temperature: 0.2, maxOutputTokens: 500 }
+                });
+
+                qaBox.innerHTML += `<div class="bg-slate-100 text-slate-800 p-3.5 rounded-xl text-base mr-8 formatted-output">${formatCleanResponse(reply)}</div>`;
+            } catch (e) {
+                qaBox.innerHTML += `<div class="bg-red-50 text-red-700 p-3 rounded-xl text-sm">Lỗi kết nối khi trả lời câu hỏi tiếp theo. Vui lòng thử lại.</div>`;
+            } finally {
+                input.disabled = false;
+                btn.disabled = false;
+                qaBox.scrollTop = qaBox.scrollHeight;
+            }
+        }
+
+        // =========================================================================
+        // 7. SECTION 3: REAL MULTI-FRAME VIDEO EXTRACTION & ANALYSIS
+        // =========================================================================
+        let selectedVideoFile = null;
+
+        function handleVideoUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            if (!file.type.startsWith('video/')) {
+                showToast("Tệp không hợp lệ. Vui lòng chọn tệp video (MP4, WEBM, MOV).");
+                return;
+            }
+            if (file.size > 50 * 1024 * 1024) {
+                showToast("Video vượt quá 50MB. Vui lòng chọn tệp nhẹ hơn.");
+                return;
+            }
+
+            selectedVideoFile = file;
+            const videoEl = document.getElementById('video-preview-el');
+            const objectUrl = URL.createObjectURL(file);
+            videoEl.src = objectUrl;
+
+            videoEl.onloadedmetadata = function() {
+                const dur = videoEl.duration ? videoEl.duration.toFixed(1) + ' giây' : 'không xác định';
+                const res = `${videoEl.videoWidth}x${videoEl.videoHeight}px`;
+                document.getElementById('video-file-name').innerText = file.name;
+                document.getElementById('video-file-info').innerText = `Thời lượng: ${dur} • Độ phân giải: ${res} • Dung lượng: ${(file.size / (1024 * 1024)).toFixed(2)} MB`;
+            };
+
+            document.getElementById('video-preview-container').classList.remove('hidden');
+            document.getElementById('video-report-container').classList.add('hidden');
+        }
+
+        async function extractVideoFrames(videoElement, count = 5) {
+            return new Promise((resolve, reject) => {
+                const duration = videoElement.duration;
+                if (!duration || isNaN(duration) || duration <= 0) {
+                    reject(new Error("Không đọc được thời lượng video."));
+                    return;
+                }
+
+                const canvas = document.createElement('canvas');
+                const scale = Math.min(1, 640 / (videoElement.videoWidth || 640));
+                canvas.width = Math.round((videoElement.videoWidth || 640) * scale);
+                canvas.height = Math.round((videoElement.videoHeight || 360) * scale);
+                const ctx = canvas.getContext('2d');
+
+                const ratios = [0.1, 0.3, 0.5, 0.7, 0.9].slice(0, count);
+                const frames = [];
+                let index = 0;
+
+                const captureNext = () => {
+                    if (index >= ratios.length) {
+                        resolve(frames);
+                        return;
+                    }
+                    const targetTime = Math.min(duration - 0.05, Math.max(0.05, duration * ratios[index]));
+                    videoElement.currentTime = targetTime;
+                };
+
+                videoElement.onseeked = () => {
+                    try {
+                        ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+                        const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
+                        const mins = Math.floor(videoElement.currentTime / 60);
+                        const secs = Math.floor(videoElement.currentTime % 60).toString().padStart(2, '0');
+                        frames.push({
+                            timestamp: `${mins}:${secs}`,
+                            seconds: videoElement.currentTime.toFixed(1),
+                            dataUrl: dataUrl,
+                            base64: dataUrl.split(',')[1]
+                        });
+                        index++;
+                        captureNext();
+                    } catch (err) {
+                        reject(err);
+                    }
+                };
+
+                captureNext();
+            });
+        }
+
+        async function runVideoAnalysis() {
+            if (!selectedVideoFile) return;
+            const btn = document.getElementById('run-vid-analysis-btn');
+            const videoEl = document.getElementById('video-preview-el');
+
+            btn.innerText = "Đang trích xuất khung hình thực tế...";
+            btn.disabled = true;
+
+            try {
+                const frames = await extractVideoFrames(videoEl, 5);
+                btn.innerText = "Đang phân tích chuỗi khung hình bằng AI...";
+
+                const durationStr = videoEl.duration.toFixed(1);
+                const resStr = `${videoEl.videoWidth}x${videoEl.videoHeight}`;
+                const timestampsList = frames.map(f => `${f.timestamp} (${f.seconds}s)`).join(', ');
+
+                const prompt = `Đây là ${frames.length} khung hình thực tế được trích xuất theo trình tự thời gian từ một tệp video (Thời lượng: ${durationStr} giây, Độ phân giải: ${resStr}, Các mốc trích xuất: ${timestampsList}).
+Hãy phân tích chuỗi khung hình này một cách trung thực và khoa học:
+1. Mô tả đúng nội dung thực sự diễn ra xuyên suốt các khung hình.
+2. Kiểm tra tính nhất quán của khuôn mặt (nếu có người), mắt, miệng, viền khuôn mặt, ánh sáng, bóng đổ và phông nền qua các mốc thời gian.
+3. Không khẳng định video là Deepfake chỉ vì 1 khung hình bị mờ do chuyển động nhanh hoặc nén video.
+4. BẮT BUỘC nêu rõ giới hạn: Hệ thống đang phân tích trên ${frames.length} khung hình tĩnh được lấy mẫu, chưa phân tích đồng bộ khẩu hình – âm thanh liên tục.
+5. Tuyệt đối không dùng ký tự dấu sao (* hoặc **).`;
+
+                const parts = [{ text: prompt }];
+                frames.forEach(f => {
+                    parts.push({
+                        inlineData: {
+                            mimeType: "image/jpeg",
+                            data: f.base64
+                        }
+                    });
+                });
+
+                const schema = {
+                    type: "OBJECT",
+                    properties: {
+                        processedSummary: {
+                            type: "STRING",
+                            description: "Tóm tắt thông số video và danh sách các mốc khung hình đã trích xuất."
+                        },
+                        observedAndAnomalies: {
+                            type: "STRING",
+                            description: "Mô tả nội dung quan sát được qua các khung hình và các dấu hiệu nhất quán hoặc bất thường (nếu có)."
+                        },
+                        analysisLimits: {
+                            type: "STRING",
+                            description: "Nêu rõ giới hạn: chỉ đánh giá dựa trên các khung hình lấy mẫu, chưa kiểm tra đồng bộ môi - tiếng và các yếu tố mờ/thiếu sáng nếu có."
+                        },
+                        riskLevel: {
+                            type: "STRING",
+                            enum: ["Thấp", "Trung bình", "Cao", "Chưa đủ cơ sở kết luận"]
+                        },
+                        verificationGuide: {
+                            type: "STRING",
+                            description: "Hướng dẫn cụ thể giúp học sinh xác minh tính xác thực của video."
+                        }
+                    },
+                    required: ["processedSummary", "observedAndAnomalies", "analysisLimits", "riskLevel", "verificationGuide"]
+                };
+
+                const rawJson = await callGeminiAPI({
+                    contents: [{ role: "user", parts: parts }],
+                    generationConfig: {
+                        responseMimeType: "application/json",
+                        responseSchema: schema,
+                        temperature: 0.15
+                    }
+                });
+
+                const report = JSON.parse(rawJson);
+                videoSessionContext = {
+                    frames: frames,
+                    metadata: { durationStr, resStr, name: selectedVideoFile.name },
+                    report: report
+                };
+
+                const badge = document.getElementById('video-risk-badge');
+                badge.className = `px-4 py-1.5 rounded-full text-sm font-bold ${getRiskBadgeStyle(report.riskLevel)}`;
+                badge.innerText = `Mức độ nguy cơ: ${stripAllAsterisks(report.riskLevel)}`;
+
+                document.getElementById('vid-report-info').innerHTML = formatCleanResponse(report.processedSummary);
+                document.getElementById('vid-report-anomalies').innerHTML = formatCleanResponse(report.observedAndAnomalies);
+                document.getElementById('vid-report-limits').innerHTML = formatCleanResponse(report.analysisLimits);
+                document.getElementById('vid-report-guide').innerHTML = formatCleanResponse(report.verificationGuide);
+
+                // Render actual extracted frame thumbnails
+                const framesContainer = document.getElementById('vid-sampled-frames');
+                framesContainer.innerHTML = frames.map((f, i) => `
+                    <div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-2xs">
+                        <img src="${f.dataUrl}" class="w-full h-20 object-cover" alt="Khung ${i+1}">
+                        <div class="px-2 py-1 text-center text-xs font-mono font-semibold text-slate-700 bg-slate-50 border-t border-slate-100">
+                            Khung ${i+1} (${f.timestamp})
+                        </div>
+                    </div>
+                `).join('');
+
+                document.getElementById('vid-qa-messages').innerHTML = `
+                    <p class="text-sm text-slate-500">Đã lưu ngữ cảnh ${frames.length} khung hình video. Bạn có thể đặt câu hỏi tiếp nối bên dưới.</p>
+                `;
+                document.getElementById('video-report-container').classList.remove('hidden');
+
+                scores.g += 2;
+                updateScoreUI();
+            } catch (err) {
+                showToast("Không thể trích xuất hoặc phân tích video này. Vui lòng kiểm tra định dạng tệp.");
+            } finally {
+                btn.innerText = "Trích xuất khung hình & Phân tích";
+                btn.disabled = false;
+            }
+        }
+
+        function handleVidQAPress(e) {
+            if (e.key === 'Enter') sendVideoQA();
+        }
+
+        async function sendVideoQA() {
+            const input = document.getElementById('vid-qa-input');
+            const btn = document.getElementById('btn-vid-qa');
+            const q = input.value.trim();
+            if (!q || !videoSessionContext) return;
+
+            const qaBox = document.getElementById('vid-qa-messages');
+            qaBox.innerHTML += `<div class="bg-indigo-50 text-indigo-950 p-3 rounded-xl text-base ml-8"><strong>Bạn:</strong> ${stripAllAsterisks(q)}</div>`;
+            input.value = '';
+            input.disabled = true;
+            btn.disabled = true;
+
+            const sysPrompt = `Bạn đang trả lời câu hỏi tiếp theo của học sinh về video vừa phân tích.
+Thông tin báo cáo video:
+- Thông số: ${videoSessionContext.report.processedSummary}
+- Quan sát & Bất thường: ${videoSessionContext.report.observedAndAnomalies}
+- Giới hạn phân tích: ${videoSessionContext.report.analysisLimits}
+- Mức độ nguy cơ: ${videoSessionContext.report.riskLevel}
+
+Trả lời dựa trên các khung hình đã trích xuất, không tự bịa thêm tình tiết không có trong video. Không dùng ký tự dấu sao (* hoặc **).`;
+
+            const parts = [{ text: q }];
+            videoSessionContext.frames.forEach(f => {
+                parts.push({ inlineData: { mimeType: "image/jpeg", data: f.base64 } });
+            });
+
+            try {
+                const reply = await callGeminiAPI({
+                    contents: [{ role: "user", parts: parts }],
+                    systemInstruction: { parts: [{ text: sysPrompt }] },
+                    generationConfig: { temperature: 0.2, maxOutputTokens: 500 }
+                });
+                qaBox.innerHTML += `<div class="bg-slate-100 text-slate-800 p-3.5 rounded-xl text-base mr-8 formatted-output">${formatCleanResponse(reply)}</div>`;
+            } catch (e) {
+                qaBox.innerHTML += `<div class="bg-red-50 text-red-700 p-3 rounded-xl text-sm">Lỗi kết nối khi trả lời câu hỏi tiếp theo.</div>`;
+            } finally {
+                input.disabled = false;
+                btn.disabled = false;
+                qaBox.scrollTop = qaBox.scrollHeight;
+            }
+        }
+
+        // =========================================================================
+        // 8. SECTION 4: REAL AUDIO TRANSCRIPTION & SCAM / VOICE ANALYSIS
+        // =========================================================================
+        let selectedAudioData = null; // { base64, mimeType, name, sizeMB }
+
+        function handleAudioUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            if (!file.type.startsWith('audio/')) {
+                showToast("Tệp không hợp lệ. Vui lòng chọn tệp âm thanh (MP3, WAV, M4A, OGG).");
+                return;
+            }
+            if (file.size > 20 * 1024 * 1024) {
+                showToast("Tệp âm thanh vượt quá 20MB. Vui lòng chọn tệp nhỏ hơn.");
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                const dataUrl = evt.target.result;
+                selectedAudioData = {
+                    base64: dataUrl.split(',')[1],
+                    mimeType: file.type || 'audio/mp3',
+                    name: file.name,
+                    sizeMB: (file.size / (1024 * 1024)).toFixed(2)
+                };
+
+                const audioEl = document.getElementById('audio-preview-el');
+                audioEl.src = dataUrl;
+                document.getElementById('audio-file-name').innerText = file.name;
+                document.getElementById('audio-file-info').innerText = `Định dạng: ${selectedAudioData.mimeType} • Dung lượng: ${selectedAudioData.sizeMB} MB`;
+                document.getElementById('audio-preview-container').classList.remove('hidden');
+                document.getElementById('audio-report-container').classList.add('hidden');
+            };
+            reader.onerror = function() {
+                showToast("Không thể đọc tệp âm thanh này.");
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function runAudioAnalysis() {
+            if (!selectedAudioData) return;
+            const btn = document.getElementById('run-aud-analysis-btn');
+            btn.innerText = "Đang nghe & Nhận dạng lời nói thực tế...";
+            btn.disabled = true;
+
+            const prompt = `Hãy lắng nghe thực tế tệp âm thanh được gửi kèm và thực hiện 2 nhiệm vụ tách biệt:
+NHIỆM VỤ 1: NHẬN DẠNG LỜI NÓI TIẾNG VIỆT (TRANSCRIPTION)
+- Chép lại chính xác những gì người trong tệp âm thanh thực sự nói.
+- Nếu tệp không có tiếng người, chỉ có tiếng ồn/nhạc, hãy ghi rõ: "[Không phát hiện lời nói rõ ràng trong tệp âm thanh]".
+- Nếu có đoạn bị nhiễu, rè hoặc không nghe rõ, BẮT BUỘC đánh dấu là [không nghe rõ]. Tuyệt đối KHÔNG tự bịa câu chữ, không tự đoán số điện thoại, số tài khoản hay số tiền khi không nghe rõ.
+
+NHIỆM VỤ 2: ĐÁNH GIÁ NGUY CƠ LỪA ĐẢO & GIỌNG NÓI AI (TÁCH BIỆT)
+- Phân tích xem nội dung lời nói thực tế ở trên có dấu hiệu lừa đảo không (giả danh công an, ngân hàng, giáo viên, người thân; yêu cầu mã OTP, mật khẩu, chuyển tiền gấp; đe dọa tâm lý; dụ cài app lạ/link lạ). Chỉ rõ câu nói nào gây nghi vấn. Nếu là hội thoại bình thường, kết luận mức nguy cơ Thấp.
+- Đánh giá độc lập về giọng nói AI: Không được kết luận giọng nói do AI tạo chỉ vì nội dung lừa đảo. Nếu không có bằng chứng kỹ thuật xác thực về giọng tổng hợp, hãy ghi rõ: "Chưa đủ cơ sở kỹ thuật để xác định giọng nói này có được tạo bằng AI hay không."
+- Tuyệt đối không dùng ký tự dấu sao (* hoặc **).`;
+
+            const schema = {
+                type: "OBJECT",
+                properties: {
+                    transcription: {
+                        type: "STRING",
+                        description: "Bản ghi lời nói thực tế nghe được từ tệp âm thanh (kèm mốc thời gian ước lượng nếu có, đánh dấu [không nghe rõ] cho đoạn nhiễu)."
+                    },
+                    scamAnalysis: {
+                        type: "STRING",
+                        description: "Phân tích nguy cơ lừa đảo dựa trên đúng nội dung lời nói vừa chép lời, trích dẫn câu đáng nghi nếu có."
+                    },
+                    syntheticVoiceEvaluation: {
+                        type: "STRING",
+                        description: "Đánh giá riêng biệt về khả năng giọng nói tổng hợp AI và giới hạn kỹ thuật."
+                    },
+                    riskLevel: {
+                        type: "STRING",
+                        enum: ["Thấp", "Trung bình", "Cao", "Chưa đủ cơ sở kết luận"]
+                    },
+                    actionGuide: {
+                        type: "STRING",
+                        description: "Hướng dẫn xử lý an toàn phù hợp với nội dung cuộc gọi/âm thanh."
+                    }
+                },
+                required: ["transcription", "scamAnalysis", "syntheticVoiceEvaluation", "riskLevel", "actionGuide"]
+            };
+
+            try {
+                const rawJson = await callGeminiAPI({
+                    contents: [{
+                        role: "user",
+                        parts: [
+                            { text: prompt },
+                            {
+                                inlineData: {
+                                    mimeType: selectedAudioData.mimeType,
+                                    data: selectedAudioData.base64
+                                }
+                            }
+                        ]
+                    }],
+                    generationConfig: {
+                        responseMimeType: "application/json",
+                        responseSchema: schema,
+                        temperature: 0.1
+                    }
+                });
+
+                const report = JSON.parse(rawJson);
+                audioSessionContext = {
+                    audio: selectedAudioData,
+                    report: report
+                };
+
+                const badge = document.getElementById('audio-risk-badge');
+                badge.className = `px-4 py-1.5 rounded-full text-sm font-bold ${getRiskBadgeStyle(report.riskLevel)}`;
+                badge.innerText = `Mức độ nguy cơ: ${stripAllAsterisks(report.riskLevel)}`;
+
+                document.getElementById('aud-report-transcript').innerHTML = formatCleanResponse(report.transcription);
+                document.getElementById('aud-report-scam').innerHTML = formatCleanResponse(report.scamAnalysis);
+                document.getElementById('aud-report-synth').innerHTML = formatCleanResponse(report.syntheticVoiceEvaluation);
+                document.getElementById('aud-report-guide').innerHTML = formatCleanResponse(report.actionGuide);
+
+                document.getElementById('aud-qa-messages').innerHTML = `
+                    <p class="text-sm text-slate-500">Đã lưu ngữ cảnh bản ghi âm thanh. Bạn có thể đặt câu hỏi tiếp nối bên dưới.</p>
+                `;
+                document.getElementById('audio-report-container').classList.remove('hidden');
+
+                scores.b += 2;
+                updateScoreUI();
+            } catch (err) {
+                showToast("Không thể giải mã hoặc phân tích tệp âm thanh này. Vui lòng thử định dạng MP3 hoặc WAV.");
+            } finally {
+                btn.innerText = "Nhận dạng lời nói & Phân tích";
+                btn.disabled = false;
+            }
+        }
+
+        function handleAudQAPress(e) {
+            if (e.key === 'Enter') sendAudioQA();
+        }
+
+        async function sendAudioQA() {
+            const input = document.getElementById('aud-qa-input');
+            const btn = document.getElementById('btn-aud-qa');
+            const q = input.value.trim();
+            if (!q || !audioSessionContext) return;
+
+            const qaBox = document.getElementById('aud-qa-messages');
+            qaBox.innerHTML += `<div class="bg-indigo-50 text-indigo-950 p-3 rounded-xl text-base ml-8"><strong>Bạn:</strong> ${stripAllAsterisks(q)}</div>`;
+            input.value = '';
+            input.disabled = true;
+            btn.disabled = true;
+
+            const sysPrompt = `Bạn đang trả lời câu hỏi tiếp theo của học sinh về tệp âm thanh vừa phân tích.
+Kết quả phân tích trước đó:
+- Lời nói nhận dạng được: ${audioSessionContext.report.transcription}
+- Đánh giá lừa đảo: ${audioSessionContext.report.scamAnalysis}
+- Đánh giá giọng nói AI: ${audioSessionContext.report.syntheticVoiceEvaluation}
+- Mức độ nguy cơ: ${audioSessionContext.report.riskLevel}
+
+Trả lời trực tiếp, chính xác, bám sát nội dung âm thanh thực tế. Không dùng ký tự dấu sao (* hoặc **).`;
+
+            try {
+                const reply = await callGeminiAPI({
+                    contents: [{
+                        role: "user",
+                        parts: [
+                            { text: q },
+                            {
+                                inlineData: {
+                                    mimeType: audioSessionContext.audio.mimeType,
+                                    data: audioSessionContext.audio.base64
+                                }
+                            }
+                        ]
+                    }],
+                    systemInstruction: { parts: [{ text: sysPrompt }] },
+                    generationConfig: { temperature: 0.2, maxOutputTokens: 500 }
+                });
+                qaBox.innerHTML += `<div class="bg-slate-100 text-slate-800 p-3.5 rounded-xl text-base mr-8 formatted-output">${formatCleanResponse(reply)}</div>`;
+            } catch (e) {
+                qaBox.innerHTML += `<div class="bg-red-50 text-red-700 p-3 rounded-xl text-sm">Lỗi kết nối khi trả lời câu hỏi tiếp theo.</div>`;
+            } finally {
+                input.disabled = false;
+                btn.disabled = false;
+                qaBox.scrollTop = qaBox.scrollHeight;
+            }
+        }
+
+        // =========================================================================
+        // 9. SECTION 5 & SECTION 6 INTERACTIONS
+        // =========================================================================
+        let quizCompleted = false;
+        function submitQuiz() {
+            const q1 = document.querySelector('input[name="q1"]:checked');
+            const q2 = document.querySelector('input[name="q2"]:checked');
+            const resBox = document.getElementById('quiz-result-box');
+
+            if (!q1 || !q2) {
+                showToast("Vui lòng chọn đáp án cho cả 2 câu hỏi trước khi nộp bài.");
+                return;
+            }
+
+            let score = 0;
+            if (q1.value === 'correct') score++;
+            if (q2.value === 'correct') score++;
+
+            if (!quizCompleted && score > 0) {
+                scores.a += score;
+                scores.b += score;
+                updateScoreUI();
+                persistSessionData();
+                quizCompleted = true;
+            }
+
+            if (score === 2) {
+                resBox.innerHTML = `<span class="text-emerald-700">🎉 Chính xác 2/2 câu! Bạn đã được cộng điểm năng lực A–B.</span>`;
+            } else {
+                resBox.innerHTML = `<span class="text-amber-700">Bạn trả lời đúng ${score}/2 câu. Hãy mở Cẩm nang ở Phần 6 để xem lại nguyên tắc kiểm chứng nhé.</span>`;
+            }
+        }
+
+        function toggleLesson(id) {
+            const el = document.getElementById(id);
+            const icon = document.getElementById(`icon-${id}`);
+            if (el.classList.contains('hidden')) {
+                el.classList.remove('hidden');
+                icon.innerText = "▲";
+            } else {
+                el.classList.add('hidden');
+                icon.innerText = "▼";
+            }
+        }
+
+        // Initialize session state on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            loadSessionStorage();
+        });
+    </script>
+</body>
+</html>
